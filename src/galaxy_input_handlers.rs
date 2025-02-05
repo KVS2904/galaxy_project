@@ -6,7 +6,7 @@ pub trait GalaxyInputHandler {
 	fn handle_input(
 		&self,
 		galaxy: &mut Galaxy,
-		stars_generator: &mut impl StarsGenerator,
+		stars_generator: &mut StarsGenerator,
 		camera: &mut Camera2D,
 	);
 }
@@ -20,7 +20,7 @@ impl GalaxyInputHandler for KeyboardInputHandler {
 	fn handle_input(
 		&self,
 		galaxy: &mut Galaxy,
-		stars_generator: &mut impl StarsGenerator,
+		stars_generator: &mut StarsGenerator,
 		camera: &mut Camera2D,
 	) {
 		if is_key_pressed(KeyCode::C) {
@@ -49,8 +49,8 @@ impl GalaxyInputHandler for KeyboardInputHandler {
 
 pub fn create_input_handler() -> impl GalaxyInputHandler {
 	KeyboardInputHandler {
-		camera_move_speed: 2.0,
-		camera_zoom_speed: 0.01,
+		camera_move_speed: 3.0,
+		camera_zoom_speed: 0.02,
 	}
 }
 

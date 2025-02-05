@@ -11,7 +11,8 @@ use galaxy_input_handlers::*;
 #[macroquad::main("Galaxy project")]
 async fn main() {
 	let galaxy_seed: u64 = 239;
-	let mut stars_generator = create_stars_generator(galaxy_seed);
+	let galaxy_type: GalaxyType = GalaxyType::Spiral;
+	let mut stars_generator: StarsGenerator = create_stars_generator(galaxy_seed, galaxy_type);
 	let mut galaxy: Galaxy = Galaxy::new("Milky way");
 
 	let initial_stars_num: u32 = 0;

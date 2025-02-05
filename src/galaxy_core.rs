@@ -1,10 +1,9 @@
 use macroquad::prelude::*;
 
 pub static mut STARS_COUNTER: u32 = 0;
-pub const MAX_STARS_QUANTITY: u32 = 100_000;
-pub const GALAXY_SIZE_X: f32 = 2_000_000.0;
-pub const GALAXY_SIZE_Y: f32 = 2_000_000.0;
-pub const STAR_COLLISION_RADIUS: f32 = 1000.0;
+pub const MAX_STARS_QUANTITY: u32 = 30_000;
+pub const GALAXY_SIZE: f32 = 50_000.0;// parsec
+pub const MIN_DIST_BETWEEN_STARS: f32 = 100.0;// parsec
 
 pub type Position = Vec2;
 
@@ -28,16 +27,16 @@ pub struct Star {
 }
 
 impl Star {
-	pub fn new(new_name: &str, new_position: &Position, new_class: StarClass) -> Self {
+	pub fn new(name: &str, position: &Position, class: StarClass) -> Self {
 		unsafe {
-			let new_id: u32 = STARS_COUNTER;
+			let id: u32 = STARS_COUNTER;
 			STARS_COUNTER += 1;
 
 			Self {
-				id: new_id,
-				name: new_name.to_string(),
-				position: *new_position,
-				class: new_class,
+				id,
+				name: name.to_string(),
+				position: *position,
+				class,
 			}
 		}
 	}
@@ -58,5 +57,9 @@ impl Galaxy {
 
 	pub fn add_stars(&mut self, additional_stars: Vec<Star>) {
 		self.stars.extend(additional_stars);
+	}
+
+	pub fn add_star(&mut self, additional_star: Star){
+		self.stars.push(additional_star);
 	}
 }

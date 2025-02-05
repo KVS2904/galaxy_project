@@ -31,12 +31,26 @@ impl GalaxyRenderer for GraphicsRenderer {
 		let galaxy_area: f32 = screen_height() * 0.8;
 
 		galaxy.stars.iter().for_each(|star: &Star| {
-			let x_pos: f32 = (star.position.x / GALAXY_SIZE_X) * galaxy_area + x_center;
-			let y_pos: f32 = (star.position.y / GALAXY_SIZE_Y) * galaxy_area + y_center;
+			let x_pos: f32 = (star.position.x / GALAXY_SIZE) * galaxy_area + x_center;
+			let y_pos: f32 = (star.position.y / GALAXY_SIZE) * galaxy_area + y_center;
 			let star_params: &StarRenderParams = &self.star_classes_render_params[&star.class];
-			draw_circle(x_pos, y_pos, star_params.radius, star_params.color);
-			//draw_circle(x_pos, y_pos, 2.0, YELLOW);
-			//draw_text(&star.name, x_pos - 10.0, y_pos + 20.0, 15.0, WHITE);
+
+			let star_big_circle_color: Color = Color {
+				r: (star_params.color.r),
+				g: (star_params.color.g),
+				b: (star_params.color.b),
+				a: (0.4),
+			};
+			let star_mid_circle_color: Color = Color {
+				r: (star_params.color.r),
+				g: (star_params.color.g),
+				b: (star_params.color.b),
+				a: (0.7),
+			};
+			let star_small_circle_color: Color = star_params.color;
+			draw_circle(x_pos, y_pos, star_params.radius, star_big_circle_color);
+			draw_circle(x_pos, y_pos, 0.5 * star_params.radius, star_mid_circle_color);
+			draw_circle(x_pos, y_pos, 0.3 * star_params.radius, star_small_circle_color);
 		});
 
 		let fps = get_fps();
@@ -69,7 +83,7 @@ pub fn create_galaxy_renderer() -> impl GalaxyRenderer {
 			StarRenderParams {
 				radius: 1.1,
 				color: Color {
-					r: 0.5,
+					r: 0.7,
 					g: 0.8,
 					b: 1.0,
 					a: 1.0,
@@ -79,7 +93,7 @@ pub fn create_galaxy_renderer() -> impl GalaxyRenderer {
 		(
 			StarClass::WhiteGiant,
 			StarRenderParams {
-				radius: 1.0,
+				radius: 1.2,
 				color: Color {
 					r: 0.9,
 					g: 0.9,
@@ -105,9 +119,9 @@ pub fn create_galaxy_renderer() -> impl GalaxyRenderer {
 			StarRenderParams {
 				radius: 1.0,
 				color: Color {
-					r: 1.0,
-					g: 0.5,
-					b: 0.5,
+					r: 0.9,
+					g: 0.7,
+					b: 0.7,
 					a: 1.0,
 				},
 			},
