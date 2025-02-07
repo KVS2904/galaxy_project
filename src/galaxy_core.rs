@@ -1,9 +1,9 @@
 use macroquad::prelude::*;
 
 pub static mut STARS_COUNTER: u32 = 0;
-pub const MAX_STARS_QUANTITY: u32 = 30_000;
-pub const GALAXY_SIZE: f32 = 50_000.0;// parsec
-pub const MIN_DIST_BETWEEN_STARS: f32 = 100.0;// parsec
+pub const MAX_STARS_QUANTITY: u32 = 150_000;
+pub const GALAXY_SIZE: f32 = 50_000.0; // parsec
+pub const MIN_DIST_BETWEEN_STARS: f32 = 85.0; // parsec
 
 pub type Position = Vec2;
 
@@ -59,7 +59,7 @@ impl Galaxy {
 		self.stars.extend(additional_stars);
 	}
 
-	pub fn add_star(&mut self, additional_star: Star){
+	pub fn add_star(&mut self, additional_star: Star) {
 		self.stars.push(additional_star);
 	}
 }

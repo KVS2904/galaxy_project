@@ -60,17 +60,17 @@ struct SpiralPositionGenerator;
 
 impl StarPositionGenerator for SpiralPositionGenerator {
 	fn generate(&mut self, rng: &mut dyn RngCore) -> Position {
-		let arm_count = 3;
+		let arm_count = 4;
 		let arm_angle_step = std::f32::consts::PI * 2.0 / arm_count as f32;
 
 		let arm_index = rng.random_range(0..arm_count);
 		let arm_base_angle = arm_index as f32 * arm_angle_step;
 
-		let b = 0.3;
+		let b = 0.8;
 
 		let normal_r = Normal::new(0.0, GALAXY_SIZE / 4.0).unwrap();
 		let r = normal_r.sample(rng);
-		let normal_angle = Normal::new(0.0, 0.4).unwrap();
+		let normal_angle = Normal::new(0.0, 0.2).unwrap();
 		let theta = 1.0 / b * f32::ln(r) + arm_base_angle + normal_angle.sample(rng);
 
 		let x = r * theta.cos();

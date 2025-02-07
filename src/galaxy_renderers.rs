@@ -14,6 +14,7 @@ pub trait GalaxyRenderer {
 
 pub struct GraphicsRenderer {
 	star_classes_render_params: HashMap<StarClass, StarRenderParams>,
+	star_texture: Texture2D,
 }
 
 impl GalaxyRenderer for GraphicsRenderer {
@@ -34,23 +35,45 @@ impl GalaxyRenderer for GraphicsRenderer {
 			let x_pos: f32 = (star.position.x / GALAXY_SIZE) * galaxy_area + x_center;
 			let y_pos: f32 = (star.position.y / GALAXY_SIZE) * galaxy_area + y_center;
 			let star_params: &StarRenderParams = &self.star_classes_render_params[&star.class];
-
-			let star_big_circle_color: Color = Color {
-				r: (star_params.color.r),
-				g: (star_params.color.g),
-				b: (star_params.color.b),
-				a: (0.4),
-			};
-			let star_mid_circle_color: Color = Color {
-				r: (star_params.color.r),
-				g: (star_params.color.g),
-				b: (star_params.color.b),
-				a: (0.7),
-			};
-			let star_small_circle_color: Color = star_params.color;
-			draw_circle(x_pos, y_pos, star_params.radius, star_big_circle_color);
-			draw_circle(x_pos, y_pos, 0.5 * star_params.radius, star_mid_circle_color);
-			draw_circle(x_pos, y_pos, 0.3 * star_params.radius, star_small_circle_color);
+			draw_texture_ex(
+				&self.star_texture,
+				x_pos,
+				y_pos,
+				star_params.color,
+				DrawTextureParams {
+					dest_size: Some(Vec2::new(
+						1.0 * star_params.radius,
+						1.0 * star_params.radius,
+					)),
+					..Default::default()
+				},
+			);
+			// let star_big_circle_color: Color = Color {
+			// 	r: (star_params.color.r),
+			// 	g: (star_params.color.g),
+			// 	b: (star_params.color.b),
+			// 	a: (0.4),
+			// };
+			// let star_mid_circle_color: Color = Color {
+			// 	r: (star_params.color.r),
+			// 	g: (star_params.color.g),
+			// 	b: (star_params.color.b),
+			// 	a: (0.7),
+			// };
+			// let star_small_circle_color: Color = star_params.color;
+			// draw_circle(x_pos, y_pos, star_params.radius, star_big_circle_color);
+			// draw_circle(
+			// 	x_pos,
+			// 	y_pos,
+			// 	0.5 * star_params.radius,
+			// 	star_mid_circle_color,
+			// );
+			// draw_circle(
+			// 	x_pos,
+			// 	y_pos,
+			// 	0.3 * star_params.radius,
+			// 	star_small_circle_color,
+			// );
 		});
 
 		let fps = get_fps();
@@ -76,7 +99,7 @@ impl GalaxyRenderer for GraphicsRenderer {
 	}
 }
 
-pub fn create_galaxy_renderer() -> impl GalaxyRenderer {
+pub fn create_galaxy_renderer(star_texture: Texture2D) -> impl GalaxyRenderer {
 	let star_classes_render_params: HashMap<StarClass, StarRenderParams> = HashMap::from([
 		(
 			StarClass::BlueGiant,
@@ -119,9 +142,9 @@ pub fn create_galaxy_renderer() -> impl GalaxyRenderer {
 			StarRenderParams {
 				radius: 1.0,
 				color: Color {
-					r: 0.9,
-					g: 0.7,
-					b: 0.7,
+					r: 1.0,
+					g: 0.4,
+					b: 0.4,
 					a: 1.0,
 				},
 			},
@@ -144,8 +167,8 @@ pub fn create_galaxy_renderer() -> impl GalaxyRenderer {
 				radius: 0.4,
 				color: Color {
 					r: 1.0,
-					g: 0.8,
-					b: 0.8,
+					g: 0.6,
+					b: 0.6,
 					a: 1.0,
 				},
 			},
@@ -156,8 +179,8 @@ pub fn create_galaxy_renderer() -> impl GalaxyRenderer {
 				radius: 0.4,
 				color: Color {
 					r: 0.7,
-					g: 0.7,
-					b: 0.5,
+					g: 0.6,
+					b: 0.4,
 					a: 1.0,
 				},
 			},
@@ -175,7 +198,9 @@ pub fn create_galaxy_renderer() -> impl GalaxyRenderer {
 			},
 		),
 	]);
+
 	GraphicsRenderer {
 		star_classes_render_params,
+		star_texture,
 	}
 }
