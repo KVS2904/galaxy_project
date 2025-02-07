@@ -1,6 +1,5 @@
-use macroquad::prelude::*;
-
 use crate::{galaxy_core::*, stars_generators::*};
+use macroquad::prelude::*;
 
 pub trait GalaxyInputHandler {
 	fn handle_input(
@@ -24,7 +23,7 @@ impl GalaxyInputHandler for KeyboardInputHandler {
 		camera: &mut Camera2D,
 	) {
 		if is_key_pressed(KeyCode::C) {
-			stars_generator.generate(galaxy, 1000);
+			stars_generator.generate(galaxy, 1);
 		}
 		if is_key_down(KeyCode::W) {
 			camera.target.y -= self.camera_move_speed;

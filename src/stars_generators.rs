@@ -124,6 +124,7 @@ impl StarsGenerator {
 			for _ in 0..generated_stars_num {
 				let new_star: Star = self.create_new_star(galaxy);
 				galaxy.add_star(new_star);
+				STARS_COUNTER += 1;
 			}
 		}
 	}
@@ -153,12 +154,13 @@ impl StarsGenerator {
 	}
 
 	fn is_valid_position(position: &Position, galaxy: &mut Galaxy) -> bool {
-		if galaxy.stars.is_empty() {
-			return true;
-		}
-		galaxy.stars.iter().all(|star: &Star| -> bool {
-			star.position.distance_squared(*position) > MIN_DIST_BETWEEN_STARS * MIN_DIST_BETWEEN_STARS
-		})
+		galaxy.is_valid_position(position)
+		// if galaxy.stars.is_empty() {
+		// 	return true;
+		// }
+		// galaxy.stars.iter().all(|star: &Star| -> bool {
+		// 	star.position.distance_squared(*position) > MIN_DIST_BETWEEN_STARS * MIN_DIST_BETWEEN_STARS
+		// })
 	}
 }
 

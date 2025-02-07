@@ -9,7 +9,7 @@ struct StarRenderParams {
 }
 
 pub trait GalaxyRenderer {
-	async fn render_frame(&self, galaxy: &Galaxy);
+	async fn render_frame(&self, galaxy: &Galaxy, camera: &Camera2D);
 }
 
 pub struct GraphicsRenderer {
@@ -18,7 +18,7 @@ pub struct GraphicsRenderer {
 }
 
 impl GalaxyRenderer for GraphicsRenderer {
-	async fn render_frame(&self, galaxy: &Galaxy) {
+	async fn render_frame(&self, galaxy: &Galaxy, camera: &Camera2D) {
 		set_fullscreen(true);
 		clear_background(Color {
 			r: (0.0),
@@ -27,13 +27,24 @@ impl GalaxyRenderer for GraphicsRenderer {
 			a: (0.0),
 		});
 
+		let half_width = screen_width() * 0.5 * (1.0 / camera.zoom.x);
+		let half_height = screen_height() * 0.5 * (1.0 / camera.zoom.y);
+
+		let left = camera.target.x - half_width;
+		let right = camera.target.x + half_width;
+		let top = camera.target.y - half_height;
+		let bottom = camera.target.y + half_height;
+
 		let x_center: f32 = 0.0;
 		let y_center: f32 = 0.0;
 		let galaxy_area: f32 = screen_height() * 0.8;
 
-		galaxy.stars.iter().for_each(|star: &Star| {
+		let mut visible_stars = 0;
+
+		galaxy.grid.iter().for_each(|((_, _), star)| {
 			let x_pos: f32 = (star.position.x / GALAXY_SIZE) * galaxy_area + x_center;
 			let y_pos: f32 = (star.position.y / GALAXY_SIZE) * galaxy_area + y_center;
+			//if x_pos >= left && x_pos <= right && y_pos >= top && y_pos <= bottom {
 			let star_params: &StarRenderParams = &self.star_classes_render_params[&star.class];
 			draw_texture_ex(
 				&self.star_texture,
@@ -42,59 +53,30 @@ impl GalaxyRenderer for GraphicsRenderer {
 				star_params.color,
 				DrawTextureParams {
 					dest_size: Some(Vec2::new(
-						1.0 * star_params.radius,
-						1.0 * star_params.radius,
+						25.0 * star_params.radius,
+						25.0 * star_params.radius,
 					)),
 					..Default::default()
 				},
 			);
-			// let star_big_circle_color: Color = Color {
-			// 	r: (star_params.color.r),
-			// 	g: (star_params.color.g),
-			// 	b: (star_params.color.b),
-			// 	a: (0.4),
-			// };
-			// let star_mid_circle_color: Color = Color {
-			// 	r: (star_params.color.r),
-			// 	g: (star_params.color.g),
-			// 	b: (star_params.color.b),
-			// 	a: (0.7),
-			// };
-			// let star_small_circle_color: Color = star_params.color;
-			// draw_circle(x_pos, y_pos, star_params.radius, star_big_circle_color);
-			// draw_circle(
-			// 	x_pos,
-			// 	y_pos,
-			// 	0.5 * star_params.radius,
-			// 	star_mid_circle_color,
-			// );
-			// draw_circle(
-			// 	x_pos,
-			// 	y_pos,
-			// 	0.3 * star_params.radius,
-			// 	star_small_circle_color,
-			// );
+			visible_stars += 1;
+			//}
 		});
 
-		let fps = get_fps();
-		draw_text(
-			&format!("FPS: {}", fps),
-			-0.6 * screen_width(),
-			0.0,
-			40.0,
-			WHITE,
-		);
+		set_default_camera();
+		draw_text(&format!("FPS: {}", get_fps()), 10.0, 20.0, 30.0, WHITE); // Координаты в пикселях экрана
 
 		unsafe {
 			let stars_count: u32 = STARS_COUNTER;
 			draw_text(
-				&format!("Stars count: {}", stars_count),
-				-0.6 * screen_width(),
-				120.0,
+				&format!("Stars count: {}, visible {}", stars_count, visible_stars),
+				10.0,
 				40.0,
+				30.0,
 				WHITE,
 			);
 		}
+
 		next_frame().await;
 	}
 }

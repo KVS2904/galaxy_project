@@ -10,12 +10,12 @@ use galaxy_input_handlers::*;
 
 #[macroquad::main("Galaxy project")]
 async fn main() {
-	let galaxy_seed: u64 = 239;
+	let galaxy_seed: u64 = 5;
 	let galaxy_type: GalaxyType = GalaxyType::Spiral;
 	let mut stars_generator: StarsGenerator = create_stars_generator(galaxy_seed, galaxy_type);
 	let mut galaxy: Galaxy = Galaxy::new("Milky way");
 
-	let initial_stars_num: u32 = 55000;
+	let initial_stars_num: u32 = 5;
 	stars_generator.generate(&mut galaxy, initial_stars_num);
 
 	let mut camera: Camera2D = create_camera();
@@ -23,12 +23,12 @@ async fn main() {
 
 	let star_texture_path: &str = "planet_640.png";
 	let star_texture: Texture2D = load_texture(star_texture_path).await.unwrap();
-	star_texture.set_filter(FilterMode::Linear);
+	star_texture.set_filter(FilterMode::Nearest);
 	let galaxy_renderer = create_galaxy_renderer(star_texture);
 
 	loop {
 		input_handler.handle_input(&mut galaxy, &mut stars_generator, &mut camera);
 		set_camera(&camera);
-		galaxy_renderer.render_frame(&galaxy).await;
+		galaxy_renderer.render_frame(&galaxy, &camera).await;
 	}
 }
