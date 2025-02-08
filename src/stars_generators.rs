@@ -3,119 +3,21 @@ use ::rand::prelude::*;
 use macroquad::math::clamp;
 use rand_distr::Normal;
 
-// --- Configuration preset ---
-struct StarGenerationPreset {
-	name_generator: Box<dyn StarNameGenerator>,
-	position_generator: Box<dyn StarPositionGenerator>,
-	class_generator: Box<dyn StarClassGenerator>,
-}
-
-// --- Name generators ---
-trait StarNameGenerator {
-	fn generate(&mut self, rng: &mut dyn RngCore) -> String;
-}
-
-struct CodeNameGenerator {
-	letters_num: u16,
-	numbers_num: u16,
-}
-
-impl StarNameGenerator for CodeNameGenerator {
-	fn generate(&mut self, rng: &mut dyn RngCore) -> String {
-		let letters: String = (0..self.letters_num)
-			.map(|_| (rng.random_range(b'A'..=b'Z') as char))
-			.collect();
-		let number: u16 = rng.random_range(10 ^ self.numbers_num..10 ^ (self.numbers_num + 1));
-		format!("{}-{}", &letters, &number)
-	}
-}
-
-// --- Position generators ---
-trait StarPositionGenerator {
-	fn generate(&mut self, rng: &mut dyn RngCore) -> Position;
-}
-
-struct RectanglePositionGenerator;
-
-impl StarPositionGenerator for RectanglePositionGenerator {
-	fn generate(&mut self, rng: &mut dyn RngCore) -> Position {
-		let x: f32 = rng.random_range(-GALAXY_SIZE / 2.0..=GALAXY_SIZE / 2.0);
-		let y: f32 = rng.random_range(-GALAXY_SIZE / 2.0..=GALAXY_SIZE / 2.0);
-		Position::new(x, y)
-	}
-}
-
-struct CloudPositionGenerator;
-
-impl StarPositionGenerator for CloudPositionGenerator {
-	fn generate(&mut self, rng: &mut dyn RngCore) -> Position {
-		let normal_pos = Normal::new(0.0, GALAXY_SIZE / 4.0).unwrap();
-		let x = normal_pos.sample(rng);
-		let y = normal_pos.sample(rng);
-		Position::new(x, y)
-	}
-}
-
-struct SpiralPositionGenerator;
-
-impl StarPositionGenerator for SpiralPositionGenerator {
-	fn generate(&mut self, rng: &mut dyn RngCore) -> Position {
-		let arm_count = 4;
-		let arm_angle_step = std::f32::consts::PI * 2.0 / arm_count as f32;
-
-		let arm_index = rng.random_range(0..arm_count);
-		let arm_base_angle = arm_index as f32 * arm_angle_step;
-
-		let b = 0.8;
-
-		let normal_r = Normal::new(0.0, GALAXY_SIZE / 4.0).unwrap();
-		let r = normal_r.sample(rng);
-		let normal_angle = Normal::new(0.0, 0.2).unwrap();
-		let theta = 1.0 / b * f32::ln(r) + arm_base_angle + normal_angle.sample(rng);
-
-		let x = r * theta.cos();
-		let y = r * theta.sin();
-
-		Position::new(x, y)
-	}
-}
-
-// --- Class generators ---
-const STAR_CLASSELS: [StarClass; 8] = [
-	StarClass::BlueGiant,
-	StarClass::WhiteGiant,
-	StarClass::YellowGiant,
-	StarClass::RedGiant,
-	StarClass::YellowDwarf,
-	StarClass::RedDwarf,
-	StarClass::BrownDwarf,
-	StarClass::Neutron,
-];
-trait StarClassGenerator {
-	fn generate(&mut self, rng: &mut dyn RngCore) -> StarClass;
-}
-
-struct UniformClassGenerator;
-
-impl StarClassGenerator for UniformClassGenerator {
-	fn generate(&mut self, rng: &mut dyn RngCore) -> StarClass {
-		let class: StarClass = STAR_CLASSELS[rng.random_range(0..STAR_CLASSELS.len())];
-		class.clone()
-	}
-}
-
 // --- Main generator ---
+pub struct StarGenerationPreset {
+	pub name_generator: Box<dyn StarNameGenerator>,
+	pub position_generator: Box<dyn StarPositionGenerator>,
+	pub class_generator: Box<dyn StarClassGenerator>,
+}
 pub struct StarsGenerator {
-	generation_preset: StarGenerationPreset,
+	pub generation_preset: StarGenerationPreset,
+	pub galaxy_seed: u64,
 	rng: StdRng,
 }
 
 impl StarsGenerator {
-	fn new(galaxy_seed: u64, generation_preset: StarGenerationPreset) -> Self {
-		Self {
-			generation_preset,
-			rng: StdRng::seed_from_u64(galaxy_seed),
-		}
+	pub fn new(galaxy_seed: u64, generation_preset: StarGenerationPreset) -> Self {
+		Self { generation_preset, galaxy_seed, rng: StdRng::seed_from_u64(galaxy_seed) }
 	}
 
 	pub fn generate(&mut self, galaxy: &mut Galaxy, stars_num: u32) {
@@ -128,95 +30,162 @@ impl StarsGenerator {
 			}
 		}
 	}
+
 	fn create_new_star(&mut self, galaxy: &mut Galaxy) -> Star {
-		let name: String = self
-			.generation_preset
-			.name_generator
-			.generate(&mut self.rng);
+		let mut position: Position = self.get_position();
+		while !galaxy.is_valid_position(&position) {
+			position = self.get_position();
+		}
+		Star::new(&self.get_name(), &position, self.get_star_class())
+	}
 
-		let mut position: Position = self
-			.generation_preset
-			.position_generator
-			.generate(&mut self.rng);
+	fn get_name(&mut self) -> String {
+		self.generation_preset.name_generator.generate(&mut self.rng)
+	}
 
-		while !StarsGenerator::is_valid_position(&position, galaxy) {
-			position = self
-				.generation_preset
-				.position_generator
-				.generate(&mut self.rng);
+	fn get_position(&mut self) -> Position {
+		self.generation_preset.position_generator.generate(&mut self.rng)
+	}
+
+	fn get_star_class(&mut self) -> StarClass {
+		self.generation_preset.class_generator.generate(&mut self.rng)
+	}
+}
+
+// --- Name generators ---
+pub trait StarNameGenerator {
+	fn generate(&mut self, rng: &mut dyn RngCore) -> String;
+}
+
+pub struct CodeNameGenerator {
+	pub letters_num: u32,
+	pub numbers_num: u32,
+}
+
+impl StarNameGenerator for CodeNameGenerator {
+	fn generate(&mut self, rng: &mut dyn RngCore) -> String {
+		let letters: String = (0..self.letters_num)
+			.map(|_| (rng.random_range(b'A'..=b'Z') as char))
+			.collect();
+		let number: u32 = rng.random_range(10_u32.pow(self.numbers_num - 1)..10_u32.pow(self.numbers_num));
+		format!("{}-{}", &letters, &number)
+	}
+}
+
+// --- Position generators ---
+pub trait StarPositionGenerator {
+	fn generate(&mut self, rng: &mut dyn RngCore) -> Position;
+}
+
+pub struct RectanglePositionGenerator;
+
+impl StarPositionGenerator for RectanglePositionGenerator {
+	fn generate(&mut self, rng: &mut dyn RngCore) -> Position {
+		let x: f32 = rng.random_range(-GALAXY_SIZE / 2.0..=GALAXY_SIZE / 2.0);
+		let y: f32 = rng.random_range(-GALAXY_SIZE / 2.0..=GALAXY_SIZE / 2.0);
+		Position::new(x, y)
+	}
+}
+
+pub struct CloudPositionGenerator {
+	normal_pos: Normal<f32>,
+}
+
+impl CloudPositionGenerator {
+	fn new() -> Self {
+		Self { normal_pos: Normal::new(0.0, GALAXY_SIZE / 4.0).unwrap() }
+	}
+}
+
+impl StarPositionGenerator for CloudPositionGenerator {
+	fn generate(&mut self, rng: &mut dyn RngCore) -> Position {
+		let x: f32 = self.normal_pos.sample(rng);
+		let y: f32 = self.normal_pos.sample(rng);
+		Position::new(x, y)
+	}
+}
+
+pub struct SpiralPositionGenerator {
+	arm_count: u32,
+	arm_curvature: f32,
+	arm_angle_step: f32,
+	normal_r: Normal<f32>,
+	normal_angle: Normal<f32>,
+}
+
+impl SpiralPositionGenerator {
+	pub fn new(arm_count: u32) -> Self {
+		if arm_count == 0 {
+			panic!("arm_count must be positive!");
+		}
+		Self {
+			arm_count,
+			arm_curvature: arm_count as f32 * 0.2,
+			arm_angle_step: std::f32::consts::PI * 2.0 / arm_count as f32,
+			normal_r: Normal::new(0.0, GALAXY_SIZE / 4.0).unwrap(),
+			normal_angle: Normal::new(0.0, 0.8 / arm_count as f32).unwrap(),
+		}
+	}
+
+	fn get_theta(&self, rng: &mut dyn RngCore, r: f32, arm_base_angle: f32) -> f32 {
+		1.0 / self.arm_curvature * f32::ln(r) + arm_base_angle + self.normal_angle.sample(rng)
+	}
+}
+
+impl StarPositionGenerator for SpiralPositionGenerator {
+	fn generate(&mut self, rng: &mut dyn RngCore) -> Position {
+		let arm_index = rng.random_range(0..self.arm_count);
+		let arm_base_angle = arm_index as f32 * self.arm_angle_step;
+		let r: f32 = self.normal_r.sample(rng);
+		let theta: f32 = self.get_theta(rng, r, arm_base_angle);
+		let x = r * theta.cos();
+		let y = r * theta.sin();
+		Position::new(x, y)
+	}
+}
+
+// --- Class generators ---
+pub trait StarClassGenerator {
+	fn generate(&mut self, rng: &mut dyn RngCore) -> StarClass;
+}
+
+pub struct UniformClassGenerator;
+
+impl StarClassGenerator for UniformClassGenerator {
+	fn generate(&mut self, rng: &mut dyn RngCore) -> StarClass {
+		STAR_CLASSES[rng.random_range(0..STAR_CLASSES.len())]
+	}
+}
+
+pub struct ColorDependedClassGenerator {
+	star_classes_filtered: Vec<StarClass>,
+}
+
+impl ColorDependedClassGenerator {
+	pub fn new(star_classes_flags: [bool; 3]) -> Self {
+		let mut star_classes_filtered: Vec<StarClass> = Vec::new();
+		if star_classes_flags[0] {
+			star_classes_filtered.push(StarClass::BrownDwarf);
+			star_classes_filtered.push(StarClass::RedDwarf);
+			star_classes_filtered.push(StarClass::RedGiant);
+		}
+		if star_classes_flags[1] {
+			star_classes_filtered.push(StarClass::YellowDwarf);
+			star_classes_filtered.push(StarClass::YellowGiant);
 		}
 
-		let class: StarClass = self
-			.generation_preset
-			.class_generator
-			.generate(&mut self.rng);
-		Star::new(&name, &position, class)
-	}
+		if star_classes_flags[2] {
+			star_classes_filtered.push(StarClass::Neutron);
+			star_classes_filtered.push(StarClass::WhiteGiant);
+			star_classes_filtered.push(StarClass::BlueGiant);
+		}
 
-	fn is_valid_position(position: &Position, galaxy: &mut Galaxy) -> bool {
-		galaxy.is_valid_position(position)
-		// if galaxy.stars.is_empty() {
-		// 	return true;
-		// }
-		// galaxy.stars.iter().all(|star: &Star| -> bool {
-		// 	star.position.distance_squared(*position) > MIN_DIST_BETWEEN_STARS * MIN_DIST_BETWEEN_STARS
-		// })
+		Self { star_classes_filtered }
 	}
 }
 
-// --- Functions for creating generators ---
-pub enum GalaxyType {
-	Rectangle,
-	Cloud,
-	Spiral,
-}
-
-pub fn create_stars_generator(galaxy_seed: u64, galaxy_type: GalaxyType) -> StarsGenerator {
-	match galaxy_type {
-		GalaxyType::Rectangle => create_rectangle_generator(galaxy_seed),
-		GalaxyType::Cloud => create_cloud_generator(galaxy_seed),
-		GalaxyType::Spiral => create_spiral_generator(galaxy_seed),
+impl StarClassGenerator for ColorDependedClassGenerator {
+	fn generate(&mut self, rng: &mut dyn RngCore) -> StarClass {
+		self.star_classes_filtered[rng.random_range(0..self.star_classes_filtered.len())]
 	}
-}
-
-fn create_rectangle_generator(galaxy_seed: u64) -> StarsGenerator {
-	StarsGenerator::new(
-		galaxy_seed,
-		StarGenerationPreset {
-			name_generator: Box::new(CodeNameGenerator {
-				letters_num: 2,
-				numbers_num: 4,
-			}),
-			position_generator: Box::new(RectanglePositionGenerator {}),
-			class_generator: Box::new(UniformClassGenerator {}),
-		},
-	)
-}
-
-fn create_spiral_generator(galaxy_seed: u64) -> StarsGenerator {
-	StarsGenerator::new(
-		galaxy_seed,
-		StarGenerationPreset {
-			name_generator: Box::new(CodeNameGenerator {
-				letters_num: 2,
-				numbers_num: 4,
-			}),
-			position_generator: Box::new(SpiralPositionGenerator {}),
-			class_generator: Box::new(UniformClassGenerator {}),
-		},
-	)
-}
-
-fn create_cloud_generator(galaxy_seed: u64) -> StarsGenerator {
-	StarsGenerator::new(
-		galaxy_seed,
-		StarGenerationPreset {
-			name_generator: Box::new(CodeNameGenerator {
-				letters_num: 2,
-				numbers_num: 4,
-			}),
-			position_generator: Box::new(CloudPositionGenerator {}),
-			class_generator: Box::new(UniformClassGenerator {}),
-		},
-	)
 }

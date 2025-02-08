@@ -1,2 +1,4 @@
 hard_tabs = true
 tab_spaces = 1
+struct_lit_width = 130
+max_width = 130
