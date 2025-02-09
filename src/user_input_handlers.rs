@@ -3,12 +3,7 @@ use macroquad::prelude::*;
 use macroquad::ui::root_ui;
 use std::process;
 pub trait UserInputHandler {
-	fn handle_input(
-		&self,
-		galaxy: &mut Galaxy,
-		stars_generator: &mut StarsGenerator,
-		camera: &mut Camera2D,
-	);
+	fn handle_input(&self, galaxy: &mut Galaxy, stars_generator: &mut StarsGenerator, camera: &mut Camera2D);
 }
 
 struct KeyboardInputHandler {
@@ -17,12 +12,7 @@ struct KeyboardInputHandler {
 }
 
 impl UserInputHandler for KeyboardInputHandler {
-	fn handle_input(
-		&self,
-		galaxy: &mut Galaxy,
-		stars_generator: &mut StarsGenerator,
-		camera: &mut Camera2D,
-	) {
+	fn handle_input(&self, galaxy: &mut Galaxy, stars_generator: &mut StarsGenerator, camera: &mut Camera2D) {
 		let dt = get_frame_time();
 
 		if is_key_down(KeyCode::W) {
@@ -65,10 +55,7 @@ pub fn create_input_handler() -> impl UserInputHandler {
 pub fn create_camera() -> Camera2D {
 	Camera2D {
 		target: vec2(0.0, 0.0),
-		zoom: vec2(
-			screen_height() / (screen_width() * screen_width()),
-			1.0 / screen_height(),
-		),
+		zoom: vec2(screen_height() / (screen_width() * screen_width()), 1.0 / screen_height()),
 		offset: vec2(0.0, 0.0),
 		..Default::default()
 	}
